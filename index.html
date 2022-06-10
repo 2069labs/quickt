@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tweetdata</title>
+    <style>
+        * {
+            border: none;
+            font-family: sans-serif;
+            font-size: 105%;
+        }
+        body {
+            padding: 20px;
+            background: black;
+            color: aliceblue;
+        }
+        #users {
+            width: 60%;
+            height: 40px;
+            resize: none;
+            border: none;
+            padding: 10px;
+        }
+        button{
+            padding: 10px;
+            font-size: 75%;
+            margin-bottom: 40px;
+            background: rgb(255, 255, 255);
+            color: rgb(0, 0, 0);
+        }
+    </style>
+</head>
+
+<body>
+    <textarea type="text" name="" id="users" placeholder="Enter usernames as @weinonz, @pxldon..."></textarea>
+    <br><button onclick="ft();">Get tweets</button>&nbsp;<span id="count"></span>
+    <div id="data-view" style="display: none;"></div>
+    <div id="data-list" >
+        
+    </div>
+
+</body>
+<script id="some" async src="" charset="utf-8"></script>
+<script>
+    let dataset = [];
+
+    function getTweets(u) {
+        try {
+            head.removeChild(document.getElementById('myscript'));
+        } catch (e) { }
+        var x = `
+        <a class="twitter-timeline" href="https://twitter.com/${u}">
+            Tweets by ${u}</a> 
+            `;
+        let jsp = `https://platform.twitter.com/widgets.js`;
+
+        document.getElementById('data-view').innerHTML = x;
+        var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        script.src = jsp;
+        script.id = 'myscript';
+        head.appendChild(script);
+    };
+
+
+    let users = [];
+    let index = 0;
+
+    function ft() {
+        if(document.querySelector('#users').value===""){
+            alert('add some @usernames');
+        }
+        users = document.querySelector('#users').value.split(',').join('').split(' ');
+        getTweets(users[index]);
+        index++;
+    }
+
+    let c = 1;
+
+
+
+    function parseTweet(t) {
+        let Tweet = {}
+        Tweet.retweet = t.children[0].children[1].innerText;
+        Tweet.by = t.children[0].children[2].innerText.split('@')[1];
+        Tweet.body = t.children[0].children[3].innerText;
+        Tweet.on = t.children[0].children[5].innerText;
+        Tweet.media = [];
+        try {
+            let m = t.children[0].children[4].children[0].children[0].children[0].children;
+            Array.from(m).forEach((e) => {
+                Tweet.media.push(e.children[0].src);
+            });
+        } catch (e) { }
+        console.log(Tweet);
+        return Tweet;
+    }
+
+    let tweets = [];
+
+
+    function renderTweets(){
+        
+        tweets.forEach((t)=>{
+            let data = 
+            `<div class="tweet">
+                <div class="retweet">${t.retweet} retweeted</div>
+                <div class="by">by ${t.by} on ${t.on}</div>
+                <div class="body">${t.body}</div>`;
+            
+            if(t.media[0]!==undefined){
+                data+= `<img class="image" src="${t.media[0]}">`
+            }
+
+            data += `</div><br><br>`;
+            document.getElementById('data-list').innerHTML += data;
+        });
+    }
+
+    document.getElementById('data-view').addEventListener('DOMSubtreeModified', (e) => {
+        c++;
+
+        if (c >= 6) {
+            let a = document.getElementById('data-view').children[0].contentWindow.document.querySelector("body > div > div.timeline-Body.customisable-border > div.timeline-Viewport > ol")
+            dataset.push(a.children);
+            if (index < users.length) {
+                ft();
+            } else {
+                for (let i = 0; i < dataset.length; i++) {
+                    for (let j = 0; j < dataset[i].length; j++) {
+                        try {
+                            let t = parseTweet(dataset[i][j]);
+                            tweets.push(t);
+                        } catch (e) {
+                            console.log(e);
+                        }
+
+                    }
+                }
+                document.querySelector('#count').innerText = `Fetched tweets from ${dataset.length} accounts`;
+                renderTweets();
+            }
+            c = 1;
+        }
+    })
+
+
+    document.addEventListener("DOMContentLoaded", function (event) {
+        console.log('loaded');
+    });
+
+
+
+</script>
+
+</html>
